@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+pass=123
+pipe=/tmp/pipe
+port=56622
+host=0.0.0.0
+
+gpg_(){
+  local mode=$1
+  gpg --batch --quiet -a --passphrase $pass --pinentry-mode loopback --allow-multiple-messages $mode
+}
+export -f gpg_
+
+rm -f $pipe
+
+(tail -qF $pipe 2>/dev/null  | nc $host $port ) &
+
+while read -re ;do
+  echo -e "${REPLY}"  | gpg_ -c > $pipe
+done

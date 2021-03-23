@@ -1,0 +1,4 @@
+ #!/usr/bin/env bash
+
+ port=56622
+ ncat -l $port --broker --k
