@@ -1,19 +1,12 @@
 #!/usr/bin/env bash
-pass=123
-pipe=/tmp/pipe
-port=56622
-host=0.0.0.0
 
-gpg_(){
-  local mode=$1
-  gpg --batch --quiet -a --passphrase $pass --pinentry-mode loopback --allow-multiple-messages $mode
-}
-export -f gpg_
+pass="123" # This should be unique for every client-server pair/channel
+host="0.0.0.0"
+port="56622"
 
-rm -f $pipe
-
-(tail -qF $pipe 2>/dev/null  | nc $host $port ) &
-
-while read -re ;do
-  echo -e "${REPLY}"  | gpg_ -c > $pipe
+# Loop makes sure connection is resumed if closed
+while :;do
+  while read -re ;do
+    echo "${REPLY}" | gpg --batch --quiet --armor --output - --passphrase "${pass}" --symmetric - 2>/dev/null
+  done | nc "${host}" "${port}"
 done

